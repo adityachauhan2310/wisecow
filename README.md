@@ -102,7 +102,7 @@ Once the pods are running, below are the steps mentioned following which we can 
 
     This command will automatically open the correct URL in the browser.
 
------
+--------------------------------------------------------------------------------
 
 ## Project Files Overview
 
