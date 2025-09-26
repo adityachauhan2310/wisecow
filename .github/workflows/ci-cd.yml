@@ -1,0 +1,42 @@
+name: Wisecow CI/CD
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Build Docker image
+      run: |
+        docker build -t wisecow:${{ github.sha }} .
+        docker tag wisecow:${{ github.sha }} wisecow:latest
+
+    - name: Test Docker image
+      run: |
+        docker run -d --name test-wisecow -p 4499:4499 wisecow:latest
+        sleep 10
+        curl -f http://localhost:4499 || exit 1
+        docker stop test-wisecow
+        docker rm test-wisecow
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy to Kubernetes
+      run: |
+        echo "Deployment would happen here"
+        echo "Image: wisecow:${{ github.sha }}"
