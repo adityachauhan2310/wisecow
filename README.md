@@ -1,69 +1,52 @@
 # Wisecow Kubernetes Project
 
-This project takes a simple web app called "Wisecow," puts it into a Docker container, and runs it on Kubernetes. Wisecow just shows a random quote from a cow every time you visit it.
+This project shows how to take a simple web app called "Wisecow," put it into a Docker container, and run it on a local Minikube Kubernetes cluster with a secure HTTPS connection. The app itself just shows a random quote from a cow.
 
-## What You'll Need (Prerequisites)
+## What will be required (Prerequisites)
 
-  * Docker Desktop
-  * A Kubernetes cluster
-  * kubectl (the command-line tool to talk to Kubernetes)
+  * **Docker**
+  * **Minikube**
+  * **`kubectl`** (the command-line tool to talk to Kubernetes)
 
---------------------------------------------------------------------------------
+-----
 
-## 1. Setting Up Kubernetes Cluster
+## 1. Starting the Minikube Cluster
 
-First, we need a Kubernetes cluster running on our machine. We can choose one of these below mentioned options.
+First, get the local Kubernetes cluster up and running.
 
-### Option A: Use Docker Desktop
+```bash
+minikube start
+```
 
-Docker Desktop comes with a built-in Kubernetes cluster.
+-----
 
-1.  Open Docker Desktop.
-2.  Go to Settings -> Kubernetes.
-3.  Check the box that says Enable Kubernetes.
-4.  Click Apply & Restart.
+## 2. Enable the Ingress Controller
 
-### Option B: Use Minikube
+Next, we need to enable the Ingress addon, which manages web traffic coming into the cluster.
 
-Minikube is a tool that runs a small, single-node Kubernetes cluster on your computer.
+```bash
+minikube addons enable ingress
+```
 
-1.  Install Minikube from the official documentation if you haven't already.
-2.  Start the cluster by running the below mentioned command in the terminal:
-    ```bash
-    minikube start
-    ```
+-----
 
---------------------------------------------------------------------------------
+## 3. Build the Docker Image
 
-## 2. Build the Docker Image
+Now, we'll package the application into a Docker image. These two commands connect the terminal to Minikube's internal Docker environment and then build the image inside it.
 
-Now we need to package the Wisecow app into a Docker image.
+```bash
+# 1. Connect your terminal to Minikube's Docker
+& minikube -p minikube docker-env --shell powershell | Invoke-Expression
 
-  * If using Docker Desktop:
-    Just run the standard build command.
+# 2. Now, build the image
+docker build -t wisecow:latest .
+```
 
-    ```bash
-    docker build -t wisecow:latest .
-    ```
+-----
 
-  * If using Minikube:
-    We would need to build the image inside Minikube's own Docker environment.
+## 4. Deploy Wisecow to Kubernetes
 
-    ```bash
-    #Connecting the terminal to Minikube's Docker
-    & minikube -p minikube docker-env --shell powershell | Invoke-Expression
-
-    # Now build the image
-    docker build -t wisecow:latest .
-    ```
-
---------------------------------------------------------------------------------
-
-## 3. Deploy Wisecow to Kubernetes
-
-With the image built, we can now tell Kubernetes to run it. The `k8s/` folder contains all the instruction files (manifests) for Kubernetes.
-
-Run the following commands to apply all the configurations:
+With the image ready, we can deploy the application. The `k8s/` folder contains all the necessary instruction files.
 
 ```bash
 kubectl apply -f k8s/deployment.yaml
@@ -72,37 +55,46 @@ kubectl apply -f k8s/tls-secret.yaml
 kubectl apply -f k8s/ingress.yaml
 ```
 
-To check if it's working, we can see if the pods (where the app runs) are up:
-
-```bash
-kubectl get pods
-```
+We can check if the app is starting by running `kubectl get pods`. Wait for the status to show `Running`.
 
 -----
 
-## 4. Accessing the Application
+## 5. Access the Application
 
-Once the pods are running, below are the steps mentioned following which we can see the Wisecow app in our browser.
+This is the final step to connect to the app from the browser.
 
-  * If using Docker Desktop:
-    Use `port-forward` to connect the local machine's port `4499` directly to the app's port inside the cluster.
+### Step 5a: Start the Minikube Tunnel
 
+We need to open a "bridge" from the computer directly to the services inside Minikube.
+
+1.  Open a **new, separate terminal window**.
+2.  Run the following command. It will ask for the administrator password and then will continue running.
     ```bash
-    kubectl port-forward service/wisecow-service 4499:4499
+    minikube tunnel
     ```
+3.  **Keep this terminal window open.** If we close it, the bridge closes, and the app will become unreachable.
 
-    Then, open the browser and go to http://localhost:4499
+### Step 5b: Edit Your Hosts File
 
-  * If using Minikube:
-    Minikube can give a direct URL to the service.
+Now, we need to tell the computer that the address `wisecow.local` points to the tunnel which we just opened.
 
-    ```bash
-    minikube service wisecow-service
+1.  Open **Notepad** as an **Administrator**.
+2.  Go to **File -> Open** and navigate to the folder `C:\Windows\System32\drivers\etc`.
+3.  Change the file type dropdown from "Text Documents" to **"All Files"** and open the `hosts` file.
+4.  Add this new line at the very end of the file:
     ```
+    127.0.0.1   wisecow.local
+    ```
+5.  Save the file.
 
-    This command will automatically open the correct URL in the browser.
+### Step 5c: Visit the Site
 
---------------------------------------------------------------------------------
+While the tunnel is running, open the web browser and go to:
+**[https://wisecow.local](https://www.google.com/search?q=https://wisecow.local)**
+
+You will see a browser warning like "Your connection is not private." This is normal because we are using a self-signed certificate. Click **"Advanced"** and **"Proceed to wisecow.local"** to see the application.
+
+-----
 
 ## Project Files Overview
 
@@ -110,4 +102,3 @@ Once the pods are running, below are the steps mentioned following which we can 
   * Dockerfile: Instructions to build the container image.
   * k8s/: A folder containing all the Kubernetes configuration files.
   * .github/workflows/: Contains the GitHub Actions workflow for CI/CD.
-
