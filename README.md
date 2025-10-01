@@ -92,6 +92,7 @@ Now, we need to tell the computer that the address `wisecow.local` points to the
 While the tunnel is running, open the web browser and go to:
 **[https://wisecow.local](https://www.google.com/search?q=https://wisecow.local)**
 
+
 You will see a browser warning like "Your connection is not private." This is normal because we are using a self-signed certificate. Click **"Advanced"** and **"Proceed to wisecow.local"** to see the application.
 
 -----
@@ -102,3 +103,6 @@ You will see a browser warning like "Your connection is not private." This is no
   * Dockerfile: Instructions to build the container image.
   * k8s/: A folder containing all the Kubernetes configuration files.
   * .github/workflows/: Contains the GitHub Actions workflow for CI/CD.
+
+
+  Testing CI CD
